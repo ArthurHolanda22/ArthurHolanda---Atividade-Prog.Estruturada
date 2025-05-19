@@ -1,0 +1,57 @@
+#include <stdio.h>
+#include <string.h>
+
+typedef struct {
+    int codigo;
+    char nome[50];
+    double preco;
+} Produto;
+
+void selectionSortPreco(Produto p[], int n) {
+    int i, j, min_idx;
+    Produto temp;
+
+    for (i = 0; i < n - 1; i++) {
+        min_idx = i;
+        for (j = i + 1; j < n; j++) {
+            if (p[j].preco < p[min_idx].preco) {
+                min_idx = j;
+            }
+        }
+
+        // Troca os produtos
+        if (min_idx != i) {
+            temp = p[i];
+            p[i] = p[min_idx];
+            p[min_idx] = temp;
+        }
+    }
+}
+
+// Função auxiliar para testes
+void imprimirProdutos(Produto p[], int n) {
+    for (int i = 0; i < n; i++) {
+        printf("Código: %d | Nome: %s | Preço: %.2f\n", p[i].codigo, p[i].nome, p[i].preco);
+    }
+}
+
+int main() {
+    Produto produtos[] = {
+        {1, "Teclado", 150.0},
+        {2, "Mouse", 100.0},
+        {3, "Monitor", 800.0},
+        {4, "Webcam", 250.0}
+    };
+
+    int n = sizeof(produtos) / sizeof(produtos[0]);
+
+    printf("Antes da ordenação:\n");
+    imprimirProdutos(produtos, n);
+
+    selectionSortPreco(produtos, n);
+
+    printf("\nDepois da ordenação:\n");
+    imprimirProdutos(produtos, n);
+
+    return 0;
+}
