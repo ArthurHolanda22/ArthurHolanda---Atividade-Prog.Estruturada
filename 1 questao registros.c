@@ -1,24 +1,38 @@
 #include <stdio.h>
 #include <string.h>
 
-#define TAM 26
+#define TAM 27
+#define TAM_NOME 30
 
 typedef struct {
-    char nome[30];
+    char nome[TAM_NOME];
     int veiculos;
     int acidentes;
 } Estado;
 
+void lerStr(char *str, int count);
+void lerDados(Estado estados[]);
+
+void lerStr(char *str, int count) {
+  fgets(str, count, stdin);
+  int tam = strlen(str);
+  if (tam > 0 && str[tam - 1] == '\n') {
+    str[tam - 1] = '\0';
+  }
+}
+
 // (a) Procedimento para coletar os dados dos 26 estados
 void lerDados(Estado estados[]) {
+    char tempStr[256];
     for (int i = 0; i < TAM; i++) {
         printf("\nEstado %d:\n", i+1);
         printf("Nome: ");
-        scanf(" %[^\n]", estados[i].nome);
+        lerStr(estados[i].nome,TAM_NOME);
         printf("Número de veículos em 2007: ");
         scanf("%d", &estados[i].veiculos);
         printf("Número de acidentes em 2007: ");
         scanf("%d", &estados[i].acidentes);
+        lerStr(tempStr, 256); 
     }
 }
 
