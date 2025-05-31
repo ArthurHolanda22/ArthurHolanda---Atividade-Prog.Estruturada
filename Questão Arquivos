@@ -1,1 +1,180 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define MAX_TITULO 100
+#define MAX_NOME 50
+#define MAX_FAV 10
+
+typedef struct {
+    int id;
+    char titulo[MAX_TITULO];
+    char categoria[MAX_TITULO];
+} Video;
+
+typedef struct {
+    int id;
+    char nome[MAX_NOME];
+    int favoritos[MAX_FAV];
+    int qtdFav;
+} Usuario;
+
+void cadastrarVideo() {
+    FILE *f = fopen("videos.bin", "ab");
+    Video v;
+    printf("ID: ");
+    scanf("%d", &v.id);
+    getchar();
+    printf("Titulo: ");
+    fgets(v.titulo, MAX_TITULO, stdin);
+    v.titulo[strcspn(v.titulo, "\n")] = 0;
+    printf("Categoria: ");
+    fgets(v.categoria, MAX_TITULO, stdin);
+    v.categoria[strcspn(v.categoria, "\n")] = 0;
+    fwrite(&v, sizeof(Video), 1, f);
+    fclose(f);
+}
+
+void cadastrarUsuario() {
+    FILE *f = fopen("usuarios.bin", "ab");
+    Usuario u;
+    printf("ID: ");
+    scanf("%d", &u.id);
+    getchar();
+    printf("Nome: ");
+    fgets(u.nome, MAX_NOME, stdin);
+    u.nome[strcspn(u.nome, "\n")] = 0;
+    printf("Quantos favoritos (até %d)? ", MAX_FAV);
+    scanf("%d", &u.qtdFav);
+    for (int i = 0; i < u.qtdFav; i++) {
+        printf("ID do video favorito %d: ", i + 1);
+        scanf("%d", &u.favoritos[i]);
+    }
+    fwrite(&u, sizeof(Usuario), 1, f);
+    fclose(f);
+}
+
+void listarVideos() {
+    FILE *f = fopen("videos.bin", "rb");
+    Video v;
+    printf("\nVideos:\n");
+    while (fread(&v, sizeof(Video), 1, f)) {
+        printf("ID: %d, Titulo: %s, Categoria: %s\n", v.id, v.titulo, v.categoria);
+    }
+    fclose(f);
+}
+
+void listarUsuarios() {
+    FILE *fu = fopen("usuarios.bin", "rb");
+    FILE *fv = fopen("videos.bin", "rb");
+    Usuario u;
+    Video v;
+    printf("\nUsuarios:\n");
+    while (fread(&u, sizeof(Usuario), 1, fu)) {
+        printf("ID: %d, Nome: %s, Favoritos:\n", u.id, u.nome);
+        for (int i = 0; i < u.qtdFav; i++) {
+            rewind(fv);
+            while (fread(&v, sizeof(Video), 1, fv)) {
+                if (v.id == u.favoritos[i]) {
+                    printf("  - %s\n", v.titulo);
+                    break;
+                }
+            }
+        }
+    }
+    fclose(fu);
+    fclose(fv);
+}
+
+void removerUsuario(int id) {
+    FILE *orig = fopen("usuarios.bin", "rb");
+    FILE *novo = fopen("usuarios_temp.bin", "wb");
+    Usuario u;
+    while (fread(&u, sizeof(Usuario), 1, orig)) {
+        if (u.id != id) {
+            fwrite(&u, sizeof(Usuario), 1, novo);
+        }
+    }
+    fclose(orig);
+    fclose(novo);
+    remove("usuarios.bin");
+    rename("usuarios_temp.bin", "usuarios.bin");
+}
+
+void removerVideo(int id) {
+    FILE *orig = fopen("videos.bin", "rb");
+    FILE *novo = fopen("videos_temp.bin", "wb");
+    Video v;
+    while (fread(&v, sizeof(Video), 1, orig)) {
+        if (v.id != id) {
+            fwrite(&v, sizeof(Video), 1, novo);
+        }
+    }
+    fclose(orig);
+    fclose(novo);
+    remove("videos.bin");
+    rename("videos_temp.bin", "videos.bin");
+}
+
+void atualizarVideo(int id) {
+    FILE *f = fopen("videos.bin", "rb+");
+    Video v;
+    while (fread(&v, sizeof(Video), 1, f)) {
+        if (v.id == id) {
+            printf("Novo titulo: ");
+            getchar();
+            fgets(v.titulo, MAX_TITULO, stdin);
+            v.titulo[strcspn(v.titulo, "\n")] = 0;
+            printf("Nova categoria: ");
+            fgets(v.categoria, MAX_TITULO, stdin);
+            v.categoria[strcspn(v.categoria, "\n")] = 0;
+            fseek(f, -sizeof(Video), SEEK_CUR);
+            fwrite(&v, sizeof(Video), 1, f);
+            break;
+        }
+    }
+    fclose(f);
+}
+
+void atualizarUsuario(int id) {
+    FILE *f = fopen("usuarios.bin", "rb+");
+    Usuario u;
+    while (fread(&u, sizeof(Usuario), 1, f)) {
+        if (u.id == id) {
+            printf("Novo nome: ");
+            getchar();
+            fgets(u.nome, MAX_NOME, stdin);
+            u.nome[strcspn(u.nome, "\n")] = 0;
+            printf("Quantos favoritos (até %d)? ", MAX_FAV);
+            scanf("%d", &u.qtdFav);
+            for (int i = 0; i < u.qtdFav; i++) {
+                printf("ID do video favorito %d: ", i + 1);
+                scanf("%d", &u.favoritos[i]);
+            }
+            fseek(f, -sizeof(Usuario), SEEK_CUR);
+            fwrite(&u, sizeof(Usuario), 1, f);
+            break;
+        }
+    }
+    fclose(f);
+}
+
+int main() {
+    int opcao, id;
+    do {
+        printf("\n1-Cadastrar Video\n2-Cadastrar Usuario\n3-Listar Videos\n4-Listar Usuarios\n5-Atualizar Video\n6-Atualizar Usuario\n7-Remover Video\n8-Remover Usuario\n0-Sair\n");
+        scanf("%d", &opcao);
+        switch(opcao) {
+            case 1: cadastrarVideo(); break;
+            case 2: cadastrarUsuario(); break;
+            case 3: listarVideos(); break;
+            case 4: listarUsuarios(); break;
+            case 5: printf("ID do Video: "); scanf("%d", &id); atualizarVideo(id); break;
+            case 6: printf("ID do Usuario: "); scanf("%d", &id); atualizarUsuario(id); break;
+            case 7: printf("ID do Video: "); scanf("%d", &id); removerVideo(id); break;
+            case 8: printf("ID do Usuario: "); scanf("%d", &id); removerUsuario(id); break;
+        }
+    } while (opcao != 0);
+    return 0;
+}
 
