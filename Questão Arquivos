@@ -2,179 +2,427 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MAX_TITULO 100
-#define MAX_NOME 50
-#define MAX_FAV 10
+// Definições para o tema de Streaming de Vídeos
+#define MAX_VIDEOS 150         // Mais vídeos
+#define MAX_TITULO 100         // Título do vídeo
+#define MAX_GENERO 50          // Gênero do vídeo
+#define MAX_USUARIOS 100
+#define MAX_VIDEOS_FAVORITOS 20 // Um usuário pode ter até 20 vídeos favoritos
 
+// Estrutura para representar um Vídeo (substitui Produto)
 typedef struct {
-    int id;
+    int idVideo;
     char titulo[MAX_TITULO];
-    char categoria[MAX_TITULO];
+    char genero[MAX_GENERO];
+    float duracaoMinutos; // Duração em minutos
+    int anoLancamento;
 } Video;
 
+// Estrutura para representar um Usuário (substitui Venda)
 typedef struct {
-    int id;
-    char nome[MAX_NOME];
-    int favoritos[MAX_FAV];
-    int qtdFav;
+    int idUsuario;
+    char nomeUsuario[MAX_TITULO]; // Nome do usuário
+    int videosFavoritos[MAX_VIDEOS_FAVORITOS]; // IDs dos vídeos favoritos
+    int totalFavoritos; // Quantidade de vídeos favoritos
 } Usuario;
 
-void cadastrarVideo() {
-    FILE *f = fopen("videos.bin", "ab");
-    Video v;
-    printf("ID: ");
-    scanf("%d", &v.id);
-    getchar();
-    printf("Titulo: ");
-    fgets(v.titulo, MAX_TITULO, stdin);
-    v.titulo[strcspn(v.titulo, "\n")] = 0;
-    printf("Categoria: ");
-    fgets(v.categoria, MAX_TITULO, stdin);
-    v.categoria[strcspn(v.categoria, "\n")] = 0;
-    fwrite(&v, sizeof(Video), 1, f);
-    fclose(f);
-}
+// --- Funções para Manter Vídeos ---
 
-void cadastrarUsuario() {
-    FILE *f = fopen("usuarios.bin", "ab");
-    Usuario u;
-    printf("ID: ");
-    scanf("%d", &u.id);
-    getchar();
-    printf("Nome: ");
-    fgets(u.nome, MAX_NOME, stdin);
-    u.nome[strcspn(u.nome, "\n")] = 0;
-    printf("Quantos favoritos (até %d)? ", MAX_FAV);
-    scanf("%d", &u.qtdFav);
-    for (int i = 0; i < u.qtdFav; i++) {
-        printf("ID do video favorito %d: ", i + 1);
-        scanf("%d", &u.favoritos[i]);
+void cadastrarVideo() {
+    Video v;
+    FILE *fp = fopen("videos.dat", "ab"); // Novo nome de arquivo
+    if (!fp) {
+        printf("Erro ao abrir arquivo de vídeos.\n");
+        return;
     }
-    fwrite(&u, sizeof(Usuario), 1, f);
-    fclose(f);
+    printf("ID do Vídeo: "); scanf("%d", &v.idVideo); getchar(); // Consumir o \n
+    printf("Título: "); fgets(v.titulo, MAX_TITULO, stdin);
+    v.titulo[strcspn(v.titulo, "\n")] = 0; // Remover \n
+
+    printf("Gênero: "); fgets(v.genero, MAX_GENERO, stdin);
+    v.genero[strcspn(v.genero, "\n")] = 0; // Remover \n
+
+    printf("Duração (minutos): "); scanf("%f", &v.duracaoMinutos);
+    printf("Ano de Lançamento: "); scanf("%d", &v.anoLancamento);
+    
+    fwrite(&v, sizeof(Video), 1, fp);
+    fclose(fp);
+    printf("Vídeo cadastrado com sucesso!\n");
 }
 
 void listarVideos() {
-    FILE *f = fopen("videos.bin", "rb");
     Video v;
-    printf("\nVideos:\n");
-    while (fread(&v, sizeof(Video), 1, f)) {
-        printf("ID: %d, Titulo: %s, Categoria: %s\n", v.id, v.titulo, v.categoria);
+    FILE *fp = fopen("videos.dat", "rb");
+    if (!fp) { printf("Nenhum vídeo cadastrado.\n"); return; }
+    printf("\n--- Catálogo de Vídeos ---\n");
+    while (fread(&v, sizeof(Video), 1, fp))
+        printf("ID: %d | Título: %s | Gênero: %s | Duração: %.1f min | Ano: %d\n", 
+               v.idVideo, v.titulo, v.genero, v.duracaoMinutos, v.anoLancamento);
+    fclose(fp);
+}
+
+void consultarVideoPorID() {
+    int id;
+    printf("ID do vídeo: "); scanf("%d", &id);
+    Video v;
+    FILE *fp = fopen("videos.dat", "rb");
+    if (!fp) {
+        printf("Erro ao abrir arquivo de vídeos.\n");
+        return;
     }
-    fclose(f);
+    while (fread(&v, sizeof(Video), 1, fp)) {
+        if (v.idVideo == id) {
+            printf("ID: %d | Título: %s | Gênero: %s | Duração: %.1f min | Ano: %d\n", 
+                   v.idVideo, v.titulo, v.genero, v.duracaoMinutos, v.anoLancamento);
+            fclose(fp);
+            return;
+        }
+    }
+    printf("Vídeo não encontrado.\n");
+    fclose(fp);
+}
+
+void atualizarVideo() {
+    int id;
+    printf("ID do vídeo a atualizar: ");
+    scanf("%d", &id);
+    Video v;
+    int encontrado = 0;
+    FILE *fp = fopen("videos.dat", "rb+");
+    if (!fp) {
+        printf("Erro ao abrir arquivo de vídeos.\n");
+        return;
+    }
+    while (fread(&v, sizeof(Video), 1, fp)) {
+        if (v.idVideo == id) {
+            printf("Novo Título: "); getchar();
+            fgets(v.titulo, MAX_TITULO, stdin);
+            v.titulo[strcspn(v.titulo, "\n")] = 0;
+
+            printf("Novo Gênero: ");
+            fgets(v.genero, MAX_GENERO, stdin);
+            v.genero[strcspn(v.genero, "\n")] = 0;
+
+            printf("Nova Duração (minutos): "); scanf("%f", &v.duracaoMinutos);
+            printf("Novo Ano de Lançamento: "); scanf("%d", &v.anoLancamento);
+            
+            fseek(fp, -sizeof(Video), SEEK_CUR); // Volta o ponteiro para o início do registro
+            fwrite(&v, sizeof(Video), 1, fp);
+            encontrado = 1;
+            break;
+        }
+    }
+    fclose(fp);
+    if (encontrado) printf("Vídeo atualizado com sucesso!\n");
+    else printf("Vídeo não encontrado.\n");
+}
+
+void removerVideo() {
+    int id;
+    printf("ID do vídeo a remover: "); scanf("%d", &id);
+    FILE *fp = fopen("videos.dat", "rb");
+    FILE *temp = fopen("temp_videos.dat", "wb"); // Arquivo temporário
+    if (!fp || !temp) {
+        printf("Erro ao abrir arquivos para remoção.\n");
+        if(fp) fclose(fp);
+        if(temp) fclose(temp);
+        return;
+    }
+    Video v;
+    int removido = 0;
+    while (fread(&v, sizeof(Video), 1, fp)) {
+        if (v.idVideo != id) {
+            fwrite(&v, sizeof(Video), 1, temp);
+        } else {
+            removido = 1;
+        }
+    }
+    fclose(fp); 
+    fclose(temp);
+    
+    remove("videos.dat"); // Apaga o arquivo original
+    rename("temp_videos.dat", "videos.dat"); // Renomeia o temp para o original
+    
+    if (removido) printf("Vídeo removido.\n");
+    else printf("Vídeo não encontrado.\n");
+}
+
+// --- Funções para Manter Usuários e Seus Favoritos ---
+
+void cadastrarUsuario() {
+    Usuario u;
+    FILE *fp = fopen("usuarios.dat", "ab"); // Novo nome de arquivo
+    if (!fp) {
+        printf("Erro ao abrir arquivo de usuários.\n");
+        return;
+    }
+    printf("ID do Usuário: "); scanf("%d", &u.idUsuario); getchar();
+    printf("Nome do Usuário: "); fgets(u.nomeUsuario, MAX_TITULO, stdin);
+    u.nomeUsuario[strcspn(u.nomeUsuario, "\n")] = 0;
+    
+    u.totalFavoritos = 0; // Inicializa sem favoritos
+    
+    fwrite(&u, sizeof(Usuario), 1, fp);
+    fclose(fp);
+    printf("Usuário cadastrado com sucesso!\n");
 }
 
 void listarUsuarios() {
-    FILE *fu = fopen("usuarios.bin", "rb");
-    FILE *fv = fopen("videos.bin", "rb");
+    Usuario u;
+    FILE *fpU = fopen("usuarios.dat", "rb"); // Arquivo de usuários
+    FILE *fpV = fopen("videos.dat", "rb");   // Arquivo de vídeos (para detalhes dos favoritos)
+    
+    if (!fpU) { printf("Nenhum usuário cadastrado.\n"); return; }
+    if (!fpV) { printf("Aviso: Arquivo de vídeos não encontrado. Favoritos não serão exibidos.\n"); }
+
+    printf("\n--- Lista de Usuários ---\n");
+    while (fread(&u, sizeof(Usuario), 1, fpU)) {
+        printf("ID: %d | Nome: %s\n", u.idUsuario, u.nomeUsuario);
+        if (u.totalFavoritos > 0 && fpV) {
+            printf("  Vídeos Favoritos (%d):\n", u.totalFavoritos);
+            for (int i = 0; i < u.totalFavoritos; i++) {
+                rewind(fpV); // Volta ao início do arquivo de vídeos para cada busca
+                Video v;
+                int videoAchado = 0;
+                while (fread(&v, sizeof(Video), 1, fpV)) {
+                    if (v.idVideo == u.videosFavoritos[i]) {
+                        printf("    - [ID %d] %s (%s, %.1f min)\n", v.idVideo, v.titulo, v.genero, v.duracaoMinutos);
+                        videoAchado = 1;
+                        break;
+                    }
+                }
+                if (!videoAchado) {
+                    printf("    - Vídeo com ID %d (favorito) não encontrado no catálogo.\n", u.videosFavoritos[i]);
+                }
+            }
+        } else if (u.totalFavoritos == 0) {
+            printf("  Nenhum vídeo favorito registrado.\n");
+        }
+    }
+    fclose(fpU);
+    if(fpV) fclose(fpV); // Fechar se foi aberto
+}
+
+void consultarUsuarioPorID() {
+    int id;
+    printf("ID do usuário: "); scanf("%d", &id);
+    Usuario u;
+    FILE *fpU = fopen("usuarios.dat", "rb");
+    FILE *fpV = fopen("videos.dat", "rb");
+    if (!fpU) { printf("Erro ao abrir arquivo de usuários.\n"); return; }
+    if (!fpV) { printf("Aviso: Arquivo de vídeos não encontrado. Favoritos não serão exibidos.\n"); }
+    
+    int encontrou = 0;
+    while (fread(&u, sizeof(Usuario), 1, fpU)) {
+        if (u.idUsuario == id) {
+            printf("--- Detalhes do Usuário ---\n");
+            printf("ID: %d | Nome: %s\n", u.idUsuario, u.nomeUsuario);
+            if (u.totalFavoritos > 0 && fpV) {
+                printf("  Vídeos Favoritos (%d):\n", u.totalFavoritos);
+                for (int i = 0; i < u.totalFavoritos; i++) {
+                    rewind(fpV);
+                    Video v;
+                    int videoAchado = 0;
+                    while (fread(&v, sizeof(Video), 1, fpV)) {
+                        if (v.idVideo == u.videosFavoritos[i]) {
+                            printf("    - [ID %d] %s (%s, %.1f min)\n", v.idVideo, v.titulo, v.genero, v.duracaoMinutos);
+                            videoAchado = 1;
+                            break;
+                        }
+                    }
+                    if (!videoAchado) {
+                        printf("    - Vídeo com ID %d (favorito) não encontrado no catálogo.\n", u.videosFavoritos[i]);
+                    }
+                }
+            } else if (u.totalFavoritos == 0) {
+                printf("  Nenhum vídeo favorito registrado.\n");
+            }
+            encontrou = 1;
+            break;
+        }
+    }
+    if (!encontrou) printf("Usuário não encontrado.\n");
+    fclose(fpU);
+    if(fpV) fclose(fpV);
+}
+
+void adicionarRemoverVideoFavorito() { // Nova função para gerenciar favoritos
+    int idUsuario, idVideoFav;
+    printf("ID do usuário: "); scanf("%d", &idUsuario);
+    printf("ID do vídeo para adicionar/remover dos favoritos: "); scanf("%d", &idVideoFav);
+
+    FILE *fpU = fopen("usuarios.dat", "rb+");
+    FILE *fpV = fopen("videos.dat", "rb"); // Para verificar se o vídeo existe
+    if (!fpU) { printf("Erro ao abrir arquivo de usuários.\n"); return; }
+    if (!fpV) { printf("Erro ao abrir arquivo de vídeos.\n"); fclose(fpU); return; }
+
     Usuario u;
     Video v;
-    printf("\nUsuarios:\n");
-    while (fread(&u, sizeof(Usuario), 1, fu)) {
-        printf("ID: %d, Nome: %s, Favoritos:\n", u.id, u.nome);
-        for (int i = 0; i < u.qtdFav; i++) {
-            rewind(fv);
-            while (fread(&v, sizeof(Video), 1, fv)) {
-                if (v.id == u.favoritos[i]) {
-                    printf("  - %s\n", v.titulo);
+    int usuarioEncontrado = 0;
+    int videoExiste = 0;
+
+    // Verificar se o vídeo existe no catálogo
+    while (fread(&v, sizeof(Video), 1, fpV)) {
+        if (v.idVideo == idVideoFav) {
+            videoExiste = 1;
+            break;
+        }
+    }
+    fclose(fpV); // Fechar arquivo de vídeos, pois não precisaremos mais dele nesta parte
+
+    if (!videoExiste) {
+        printf("Erro: Vídeo com ID %d não existe no catálogo.\n", idVideoFav);
+        fclose(fpU);
+        return;
+    }
+
+    rewind(fpU); // Volta para o início do arquivo de usuários
+    while (fread(&u, sizeof(Usuario), 1, fpU)) {
+        if (u.idUsuario == idUsuario) {
+            usuarioEncontrado = 1;
+            int jaFavorito = 0;
+            int indiceParaRemover = -1;
+
+            // Verificar se já é favorito
+            for (int i = 0; i < u.totalFavoritos; i++) {
+                if (u.videosFavoritos[i] == idVideoFav) {
+                    jaFavorito = 1;
+                    indiceParaRemover = i;
                     break;
                 }
             }
-        }
-    }
-    fclose(fu);
-    fclose(fv);
-}
 
-void removerUsuario(int id) {
-    FILE *orig = fopen("usuarios.bin", "rb");
-    FILE *novo = fopen("usuarios_temp.bin", "wb");
-    Usuario u;
-    while (fread(&u, sizeof(Usuario), 1, orig)) {
-        if (u.id != id) {
-            fwrite(&u, sizeof(Usuario), 1, novo);
-        }
-    }
-    fclose(orig);
-    fclose(novo);
-    remove("usuarios.bin");
-    rename("usuarios_temp.bin", "usuarios.bin");
-}
-
-void removerVideo(int id) {
-    FILE *orig = fopen("videos.bin", "rb");
-    FILE *novo = fopen("videos_temp.bin", "wb");
-    Video v;
-    while (fread(&v, sizeof(Video), 1, orig)) {
-        if (v.id != id) {
-            fwrite(&v, sizeof(Video), 1, novo);
-        }
-    }
-    fclose(orig);
-    fclose(novo);
-    remove("videos.bin");
-    rename("videos_temp.bin", "videos.bin");
-}
-
-void atualizarVideo(int id) {
-    FILE *f = fopen("videos.bin", "rb+");
-    Video v;
-    while (fread(&v, sizeof(Video), 1, f)) {
-        if (v.id == id) {
-            printf("Novo titulo: ");
-            getchar();
-            fgets(v.titulo, MAX_TITULO, stdin);
-            v.titulo[strcspn(v.titulo, "\n")] = 0;
-            printf("Nova categoria: ");
-            fgets(v.categoria, MAX_TITULO, stdin);
-            v.categoria[strcspn(v.categoria, "\n")] = 0;
-            fseek(f, -sizeof(Video), SEEK_CUR);
-            fwrite(&v, sizeof(Video), 1, f);
-            break;
-        }
-    }
-    fclose(f);
-}
-
-void atualizarUsuario(int id) {
-    FILE *f = fopen("usuarios.bin", "rb+");
-    Usuario u;
-    while (fread(&u, sizeof(Usuario), 1, f)) {
-        if (u.id == id) {
-            printf("Novo nome: ");
-            getchar();
-            fgets(u.nome, MAX_NOME, stdin);
-            u.nome[strcspn(u.nome, "\n")] = 0;
-            printf("Quantos favoritos (até %d)? ", MAX_FAV);
-            scanf("%d", &u.qtdFav);
-            for (int i = 0; i < u.qtdFav; i++) {
-                printf("ID do video favorito %d: ", i + 1);
-                scanf("%d", &u.favoritos[i]);
+            if (jaFavorito) {
+                // Remover dos favoritos
+                for (int i = indiceParaRemover; i < u.totalFavoritos - 1; i++) {
+                    u.videosFavoritos[i] = u.videosFavoritos[i+1];
+                }
+                u.totalFavoritos--;
+                printf("Vídeo removido dos favoritos do usuário %s.\n", u.nomeUsuario);
+            } else {
+                // Adicionar aos favoritos
+                if (u.totalFavoritos < MAX_VIDEOS_FAVORITOS) {
+                    u.videosFavoritos[u.totalFavoritos] = idVideoFav;
+                    u.totalFavoritos++;
+                    printf("Vídeo adicionado aos favoritos do usuário %s.\n", u.nomeUsuario);
+                } else {
+                    printf("Limite de vídeos favoritos atingido para o usuário %s.\n", u.nomeUsuario);
+                }
             }
-            fseek(f, -sizeof(Usuario), SEEK_CUR);
-            fwrite(&u, sizeof(Usuario), 1, f);
+            fseek(fpU, -sizeof(Usuario), SEEK_CUR);
+            fwrite(&u, sizeof(Usuario), 1, fpU);
             break;
         }
     }
-    fclose(f);
+    fclose(fpU);
+    if (!usuarioEncontrado) {
+        printf("Usuário com ID %d não encontrado.\n", idUsuario);
+    }
 }
+
+
+void atualizarUsuario() {
+    int id;
+    printf("ID do usuário a atualizar: ");
+    scanf("%d", &id);
+    Usuario u;
+    int encontrado = 0;
+    FILE *fp = fopen("usuarios.dat", "rb+");
+    if (!fp) {
+        printf("Erro ao abrir arquivo de usuários.\n");
+        return;
+    }
+    while (fread(&u, sizeof(Usuario), 1, fp)) {
+        if (u.idUsuario == id) {
+            printf("Novo Nome do Usuário: "); getchar();
+            fgets(u.nomeUsuario, MAX_TITULO, stdin);
+            u.nomeUsuario[strcspn(u.nomeUsuario, "\n")] = 0;
+            
+            // Aqui você pode permitir atualizar os favoritos também, mas seria mais complexo.
+            // Por simplicidade, vou manter apenas o nome ou sugerir a função dedicada.
+            printf("Total de favoritos atual: %d. Use a opção dedicada para gerenciar favoritos.\n", u.totalFavoritos);
+
+            fseek(fp, -sizeof(Usuario), SEEK_CUR);
+            fwrite(&u, sizeof(Usuario), 1, fp);
+            encontrado = 1;
+            break;
+        }
+    }
+    fclose(fp);
+    if (encontrado) printf("Usuário atualizado com sucesso!\n");
+    else printf("Usuário não encontrado.\n");
+}
+
+void removerUsuario() {
+    int id;
+    printf("ID do usuário a remover: "); scanf("%d", &id);
+    FILE *fp = fopen("usuarios.dat", "rb");
+    FILE *temp = fopen("temp_usuarios.dat", "wb"); // Arquivo temporário
+    if (!fp || !temp) {
+        printf("Erro ao abrir arquivos para remoção.\n");
+        if(fp) fclose(fp);
+        if(temp) fclose(temp);
+        return;
+    }
+    Usuario u;
+    int removido = 0;
+    while (fread(&u, sizeof(Usuario), 1, fp)) {
+        if (u.idUsuario != id) {
+            fwrite(&u, sizeof(Usuario), 1, temp);
+        } else {
+            removido = 1;
+        }
+    }
+    fclose(fp); 
+    fclose(temp);
+    
+    remove("usuarios.dat"); // Apaga o original
+    rename("temp_usuarios.dat", "usuarios.dat"); // Renomeia o temp
+    
+    if (removido) printf("Usuário removido.\n");
+    else printf("Usuário não encontrado.\n");
+}
+
 
 int main() {
-    int opcao, id;
+    int opcao;
     do {
-        printf("\n1-Cadastrar Video\n2-Cadastrar Usuario\n3-Listar Videos\n4-Listar Usuarios\n5-Atualizar Video\n6-Atualizar Usuario\n7-Remover Video\n8-Remover Usuario\n0-Sair\n");
+        printf("\n--- SISTEMA DE GERENCIAMENTO DE STREAMING ---\n");
+        printf("1  - Cadastrar Novo Vídeo\n");
+        printf("2  - Listar Vídeos Disponíveis\n");
+        printf("3  - Cadastrar Novo Usuário\n");
+        printf("4  - Listar Usuários e Favoritos\n");
+        printf("5  - Remover Vídeo do Catálogo\n");
+        printf("6  - Atualizar Detalhes de Vídeo\n");
+        printf("7  - Atualizar Informações de Usuário\n");
+        printf("8  - Consultar Vídeo por ID\n");
+        printf("9  - Consultar Usuário por ID\n");
+        printf("10 - Adicionar/Remover Vídeo Favorito de Usuário\n"); // Nova opção
+        printf("11 - Remover Usuário\n"); // Nova opção
+        printf("0  - Sair do Sistema\n");
+        printf("----------------------------------------------\n");
+        printf("Escolha uma opção: ");
         scanf("%d", &opcao);
-        switch(opcao) {
+        getchar(); // Consumir o \n pendente após scanf
+
+        switch (opcao) {
             case 1: cadastrarVideo(); break;
-            case 2: cadastrarUsuario(); break;
-            case 3: listarVideos(); break;
+            case 2: listarVideos(); break;
+            case 3: cadastrarUsuario(); break;
             case 4: listarUsuarios(); break;
-            case 5: printf("ID do Video: "); scanf("%d", &id); atualizarVideo(id); break;
-            case 6: printf("ID do Usuario: "); scanf("%d", &id); atualizarUsuario(id); break;
-            case 7: printf("ID do Video: "); scanf("%d", &id); removerVideo(id); break;
-            case 8: printf("ID do Usuario: "); scanf("%d", &id); removerUsuario(id); break;
+            case 5: removerVideo(); break;
+            case 6: atualizarVideo(); break;
+            case 7: atualizarUsuario(); break;
+            case 8: consultarVideoPorID(); break;
+            case 9: consultarUsuarioPorID(); break;
+            case 10: adicionarRemoverVideoFavorito(); break; // Chama a nova função
+            case 11: removerUsuario(); break; // Chama a nova função
+            case 0: printf("Encerrando o Sistema de Streaming. Até a próxima!\n"); break;
+            default: printf("Opção inválida! Por favor, selecione uma opção válida.\n");
         }
+        printf("\nPressione ENTER para continuar...");
+        getchar(); // Pausa para o usuário ver a saída
     } while (opcao != 0);
+
     return 0;
 }
-
