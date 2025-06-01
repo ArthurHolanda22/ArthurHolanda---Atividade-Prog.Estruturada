@@ -22,9 +22,6 @@ typedef struct {
 ContaBancaria contas[MAX_CONTAS];
 int totalContas = 0; 
 
-// --- Funções ---
-
-
 void carregarContasDoArquivo() {
     FILE *fp = fopen(NOME_ARQUIVO_CONTAS, "rb");
     if (fp == NULL) {
