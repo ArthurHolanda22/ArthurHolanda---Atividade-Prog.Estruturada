@@ -2,12 +2,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MAX_CONTAS 100 
+#define MAX_CONTAS 100
 #define TAM_NOME 100
-#define TAM_CPF 15   
-#define TAM_TELEFONE 15 
-#define NOME_ARQUIVO_CONTAS  
-
+#define TAM_CPF 15
+#define TAM_TELEFONE 15
+#define NOME_ARQUIVO_CONTAS "contas.dat"
 
 typedef struct {
     int numeroConta;
@@ -15,12 +14,11 @@ typedef struct {
     char cpf[TAM_CPF];
     char telefone[TAM_TELEFONE];
     float saldo;
-    int ativa; 
+    int ativa;
 } ContaBancaria;
 
-
 ContaBancaria contas[MAX_CONTAS];
-int totalContas = 0; 
+int totalContas = 0;
 
 void carregarContasDoArquivo() {
     FILE *fp = fopen(NOME_ARQUIVO_CONTAS, "rb");
@@ -41,7 +39,6 @@ void carregarContasDoArquivo() {
     printf("Contas carregadas do arquivo %s.\n", NOME_ARQUIVO_CONTAS);
 }
 
-
 void salvarContasNoArquivo() {
     FILE *fp = fopen(NOME_ARQUIVO_CONTAS, "wb");
     if (fp == NULL) {
@@ -49,7 +46,7 @@ void salvarContasNoArquivo() {
         return;
     }
     for (int i = 0; i < totalContas; i++) {
-        if (contas[i].ativa) { // Salva apenas contas ativas
+        if (contas[i].ativa) {
             fwrite(&contas[i], sizeof(ContaBancaria), 1, fp);
         }
     }
@@ -57,29 +54,24 @@ void salvarContasNoArquivo() {
     printf("Contas salvas no arquivo %s.\n", NOME_ARQUIVO_CONTAS);
 }
 
-// --- Funções Auxiliares de Entrada/Saída ---
-
-
 void limparBuffer() {
     int c;
     while ((c = getchar()) != '\n' && c != EOF);
 }
 
-
 void lerString(char *buffer, int tamanho) {
     fgets(buffer, tamanho, stdin);
-    buffer[strcspn(buffer, "\n")] = 0; 
+    buffer[strcspn(buffer, "\n")] = 0;
 }
 
 int buscarConta(int numeroConta) {
     for (int i = 0; i < totalContas; i++) {
         if (contas[i].ativa && contas[i].numeroConta == numeroConta) {
-            return i; // Conta encontrada na posição i
+            return i;
         }
     }
-    return -1; // Conta não encontrada
+    return -1;
 }
-
 
 void cadastrarNovaConta() {
     if (totalContas >= MAX_CONTAS) {
@@ -93,7 +85,7 @@ void cadastrarNovaConta() {
     printf("\n--- Cadastro de Nova Conta ---\n");
     printf("Número da Conta (inteiro): ");
     scanf("%d", &numeroContaDigitado);
-    limparBuffer(); 
+    limparBuffer();
 
     if (buscarConta(numeroContaDigitado) != -1) {
         printf("Erro: Já existe uma conta com o número %d. Cadastro não permitido.\n", numeroContaDigitado);
@@ -115,15 +107,14 @@ void cadastrarNovaConta() {
     scanf("%f", &novaConta.saldo);
     limparBuffer();
 
-    novaConta.ativa = 1; 
+    novaConta.ativa = 1;
 
     contas[totalContas] = novaConta;
     totalContas++;
 
     printf("Conta %d cadastrada com sucesso!\n", novaConta.numeroConta);
-    salvarContasNoArquivo(); 
+    salvarContasNoArquivo();
 }
-
 
 void consultarSaldo() {
     int numeroConta;
@@ -140,7 +131,6 @@ void consultarSaldo() {
         printf("Conta %d não encontrada ou não está cadastrada.\n", numeroConta);
     }
 }
-
 
 void fazerDeposito() {
     int numeroConta;
@@ -161,7 +151,7 @@ void fazerDeposito() {
             contas[indice].saldo += valorDeposito;
             printf("Depósito de R$ %.2f realizado com sucesso na conta %d.\n", valorDeposito, numeroConta);
             printf("Novo saldo: R$ %.2f\n", contas[indice].saldo);
-            salvarContasNoArquivo(); // Salva após a alteração
+            salvarContasNoArquivo();
         } else {
             printf("Valor de depósito inválido. Deve ser maior que zero.\n");
         }
@@ -169,7 +159,6 @@ void fazerDeposito() {
         printf("Conta %d não encontrada ou não está cadastrada.\n", numeroConta);
     }
 }
-
 
 void fazerSaque() {
     int numeroConta;
@@ -192,7 +181,7 @@ void fazerSaque() {
             contas[indice].saldo -= valorSaque;
             printf("Saque de R$ %.2f realizado com sucesso na conta %d.\n", valorSaque, numeroConta);
             printf("Novo saldo: R$ %.2f\n", contas[indice].saldo);
-            salvarContasNoArquivo(); // Salva após a alteração
+            salvarContasNoArquivo();
         } else {
             printf("Saldo insuficiente. Saldo disponível: R$ %.2f. Valor solicitado: R$ %.2f.\n",
                    contas[indice].saldo, valorSaque);
@@ -232,15 +221,15 @@ void removerConta() {
 
     int indice = buscarConta(numeroConta);
     if (indice != -1) {
-        int confirmacao; 
-        printf("Tem certeza que deseja remover a conta %d - %s? (1 para sim / 0 para não): ", contas[indice].numeroConta, contas[indice].nomeTitular); // Mensagem atualizada
-        scanf("%d", &confirmacao); 
+        int confirmacao;
+        printf("Tem certeza que deseja remover a conta %d - %s? (1 para sim / 0 para não): ", contas[indice].numeroConta, contas[indice].nomeTitular);
+        scanf("%d", &confirmacao);
         limparBuffer();
 
-        if (confirmacao == 1) { 
-            contas[indice].ativa = 0; 
+        if (confirmacao == 1) {
+            contas[indice].ativa = 0;
             printf("Conta %d removida (marcada como inativa).\n", numeroConta);
-            salvarContasNoArquivo(); 
+            salvarContasNoArquivo();
         } else {
             printf("Remoção de conta cancelada.\n");
         }
@@ -249,10 +238,8 @@ void removerConta() {
     }
 }
 
-
-
 int main() {
-    carregarContasDoArquivo(); 
+    carregarContasDoArquivo();
 
     int opcao;
     do {
@@ -267,7 +254,7 @@ int main() {
         printf("===========================================\n");
         printf("Escolha uma opção: ");
         scanf("%d", &opcao);
-        limparBuffer(); 
+        limparBuffer();
 
         switch (opcao) {
             case 1: cadastrarNovaConta(); break;
@@ -280,7 +267,6 @@ int main() {
             default: printf("Opção inválida. Por favor, tente novamente.\n");
         }
 
-        
         if (opcao != 0) {
             printf("\nPressione ENTER para continuar...");
             getchar();
