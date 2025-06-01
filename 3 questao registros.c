@@ -2,29 +2,29 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MAX_CONTAS 100 // Máximo de 100 contas
+#define MAX_CONTAS 100 
 #define TAM_NOME 100
-#define TAM_CPF 15   // Ex: "123.456.789-00\0"
-#define TAM_TELEFONE 15 // Ex: "(XX) XXXXX-XXXX\0"
-#define NOME_ARQUIVO_CONTAS "contas.dat" // Nome do arquivo binário para persistência
+#define TAM_CPF 15   
+#define TAM_TELEFONE 15 
+#define NOME_ARQUIVO_CONTAS  
 
-// Estrutura para representar uma conta bancária
+
 typedef struct {
     int numeroConta;
     char nomeTitular[TAM_NOME];
     char cpf[TAM_CPF];
     char telefone[TAM_TELEFONE];
     float saldo;
-    int ativa; // 1 se a conta estiver ativa, 0 se estiver "removida" logicamente
+    int ativa; 
 } ContaBancaria;
 
-// Variáveis globais para gerenciar o array de contas em memória
+
 ContaBancaria contas[MAX_CONTAS];
-int totalContas = 0; // Número de contas atualmente no array
+int totalContas = 0; 
 
-// --- Funções de Manipulação de Arquivos ---
+// --- Funções ---
 
-// Carrega as contas do arquivo binário para a memória
+
 void carregarContasDoArquivo() {
     FILE *fp = fopen(NOME_ARQUIVO_CONTAS, "rb");
     if (fp == NULL) {
@@ -44,7 +44,7 @@ void carregarContasDoArquivo() {
     printf("Contas carregadas do arquivo %s.\n", NOME_ARQUIVO_CONTAS);
 }
 
-// Salva as contas da memória para o arquivo binário
+
 void salvarContasNoArquivo() {
     FILE *fp = fopen(NOME_ARQUIVO_CONTAS, "wb");
     if (fp == NULL) {
@@ -62,22 +62,18 @@ void salvarContasNoArquivo() {
 
 // --- Funções Auxiliares de Entrada/Saída ---
 
-// Consome o caractere de nova linha pendente no buffer de entrada
+
 void limparBuffer() {
     int c;
     while ((c = getchar()) != '\n' && c != EOF);
 }
 
-// Função para ler strings de forma segura
+
 void lerString(char *buffer, int tamanho) {
     fgets(buffer, tamanho, stdin);
-    buffer[strcspn(buffer, "\n")] = 0; // Remove a quebra de linha
+    buffer[strcspn(buffer, "\n")] = 0; 
 }
 
-// --- Subprogramas Conforme a Questão ---
-
-// (a) Função de busca
-// Retorna o índice da conta no array 'contas' se encontrada, ou -1 caso contrário.
 int buscarConta(int numeroConta) {
     for (int i = 0; i < totalContas; i++) {
         if (contas[i].ativa && contas[i].numeroConta == numeroConta) {
@@ -87,7 +83,7 @@ int buscarConta(int numeroConta) {
     return -1; // Conta não encontrada
 }
 
-// (b) Procedimento para cadastrar uma nova conta
+
 void cadastrarNovaConta() {
     if (totalContas >= MAX_CONTAS) {
         printf("Limite máximo de contas atingido (%d).\n", MAX_CONTAS);
@@ -100,7 +96,7 @@ void cadastrarNovaConta() {
     printf("\n--- Cadastro de Nova Conta ---\n");
     printf("Número da Conta (inteiro): ");
     scanf("%d", &numeroContaDigitado);
-    limparBuffer(); // Limpa o buffer após scanf
+    limparBuffer(); 
 
     if (buscarConta(numeroContaDigitado) != -1) {
         printf("Erro: Já existe uma conta com o número %d. Cadastro não permitido.\n", numeroContaDigitado);
@@ -122,16 +118,16 @@ void cadastrarNovaConta() {
     scanf("%f", &novaConta.saldo);
     limparBuffer();
 
-    novaConta.ativa = 1; // Marca a conta como ativa
+    novaConta.ativa = 1; 
 
     contas[totalContas] = novaConta;
     totalContas++;
 
     printf("Conta %d cadastrada com sucesso!\n", novaConta.numeroConta);
-    salvarContasNoArquivo(); // Salva imediatamente após o cadastro
+    salvarContasNoArquivo(); 
 }
 
-// (c) Procedimento para consultar o saldo de uma conta
+
 void consultarSaldo() {
     int numeroConta;
     printf("Número da Conta para consulta de saldo: ");
@@ -148,7 +144,7 @@ void consultarSaldo() {
     }
 }
 
-// (d) Procedimento para fazer um depósito em uma conta
+
 void fazerDeposito() {
     int numeroConta;
     float valorDeposito;
@@ -177,7 +173,7 @@ void fazerDeposito() {
     }
 }
 
-// (e) Procedimento para fazer um saque em uma conta
+
 void fazerSaque() {
     int numeroConta;
     float valorSaque;
@@ -209,7 +205,6 @@ void fazerSaque() {
     }
 }
 
-// (f) Procedimento para exibir o número da conta, o nome do titular e o telefone de contato para todas as contas.
 void exibirTodasContas() {
     if (totalContas == 0) {
         printf("Nenhuma conta cadastrada.\n");
@@ -232,7 +227,6 @@ void exibirTodasContas() {
     printf("--------------------------------------------------------------------------\n");
 }
 
-// Função para "remover" uma conta logicamente (marcar como inativa)
 void removerConta() {
     int numeroConta;
     printf("Número da Conta a ser removida: ");
@@ -241,15 +235,15 @@ void removerConta() {
 
     int indice = buscarConta(numeroConta);
     if (indice != -1) {
-        int confirmacao; // Alterado para int
+        int confirmacao; 
         printf("Tem certeza que deseja remover a conta %d - %s? (1 para sim / 0 para não): ", contas[indice].numeroConta, contas[indice].nomeTitular); // Mensagem atualizada
-        scanf("%d", &confirmacao); // Lendo um inteiro
+        scanf("%d", &confirmacao); 
         limparBuffer();
 
-        if (confirmacao == 1) { // Verificando se é 1
-            contas[indice].ativa = 0; // Marca como inativa
+        if (confirmacao == 1) { 
+            contas[indice].ativa = 0; 
             printf("Conta %d removida (marcada como inativa).\n", numeroConta);
-            salvarContasNoArquivo(); // Salva para remover do arquivo na próxima carga
+            salvarContasNoArquivo(); 
         } else {
             printf("Remoção de conta cancelada.\n");
         }
@@ -258,14 +252,14 @@ void removerConta() {
     }
 }
 
-// --- Função Principal (Main) e Menu ---
+
 
 int main() {
-    carregarContasDoArquivo(); // Carrega as contas existentes ao iniciar o programa
+    carregarContasDoArquivo(); 
 
     int opcao;
     do {
-        printf("\n========== BANCO DINHEIRO CERTO ==========\n");
+        printf("\n========== BANCO BRASILEIRO ==========\n");
         printf("1. Cadastrar Nova Conta\n");
         printf("2. Consultar Saldo\n");
         printf("3. Fazer Depósito\n");
@@ -276,7 +270,7 @@ int main() {
         printf("===========================================\n");
         printf("Escolha uma opção: ");
         scanf("%d", &opcao);
-        limparBuffer(); // Limpa o buffer após scanf
+        limparBuffer(); 
 
         switch (opcao) {
             case 1: cadastrarNovaConta(); break;
@@ -285,16 +279,14 @@ int main() {
             case 4: fazerSaque(); break;
             case 5: exibirTodasContas(); break;
             case 6: removerConta(); break;
-            case 0: printf("Obrigado por usar o Banco Dinheiro Certo. Até logo!\n"); break;
+            case 0: printf("Obrigado por usar o Banco Brasileiro. Até logo!\n"); break;
             default: printf("Opção inválida. Por favor, tente novamente.\n");
         }
 
-        // Pausa para o usuário ver a saída antes de limpar a tela (opcional)
+        
         if (opcao != 0) {
             printf("\nPressione ENTER para continuar...");
             getchar();
-            // system("cls"); // Descomente para limpar a tela no Windows
-            // system("clear"); // Descomente para limpar a tela no Linux/macOS
         }
 
     } while (opcao != 0);
